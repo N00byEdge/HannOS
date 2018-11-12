@@ -140,17 +140,17 @@ namespace HannOS::CPU {
     __attribute__ ((naked))
     void getFeatures(Features &) {
       asm(R"(
-        push %ebx
+        push %rbx
         movl $1, %eax
         cpuid
-        push %eax
+        push %rax
         movl 16(%esp), %eax
         movl %ebx, 4(%eax)
         movl %ecx, 8(%eax)
         movl %edx, 12(%eax)
-        pop %ebx
+        pop %rbx
         movl %ebx, (%eax)
-        pop %ebx
+        pop %rbx
         ret
       )");
     }

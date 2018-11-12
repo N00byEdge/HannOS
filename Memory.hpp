@@ -5,3 +5,7 @@ void *kMalloc();
 void kFree(void *ptr);
 void *kCalloc();
 
+void *kMalloc(intptr_t sz);
+void *kFree(void *ptr, intptr_t sz);
+void *kCalloc(intptr_t sz, intptr_t num);
+

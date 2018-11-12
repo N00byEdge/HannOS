@@ -1,25 +1,19 @@
-.set MagicNumber,   0x1badb002
-.set Bootflags,     0x00000007
-.set Checksum,      -(MagicNumber + Bootflags)
-.set Ignore,        0x0
-.set GraphicsMode,  0x1
-.set DisplayWidth,  80
-.set DisplayHeight, 25
-.set DisplayDepth,  0x0
+.code32
+.set MagicNumber,   0xe85250d6
+.set Arch,          0x00000000
+.set mblen,         mbend - mbbegin;
+.set Checksum,      (-(MagicNumber + Arch + mblen)&0xffffffff)
 
 .section .multiboot
+mbbegin:
   .long MagicNumber
-  .long Bootflags
+  .long Arch
+  .long mblen
   .long Checksum
-  .long Ignore
-  .long Ignore
-  .long Ignore
-  .long Ignore
-  .long Ignore
-  .long GraphicsMode
-  .long DisplayWidth
-  .long DisplayHeight
-  .long DisplayDepth
+  .word 0
+  .word 0
+  .long 8
+mbend:
 
 .section .text
 .extern kernel
@@ -27,6 +21,8 @@
 .global loader
 loader:
   mov $stack, %esp
+  call okExample
+  hlt
   call kernel
   
   cli

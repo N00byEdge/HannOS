@@ -4,9 +4,14 @@
 #include "CPU.hpp"
 #include "Memory.hpp"
 
+extern "C" void okExample() {
+  auto mem = reinterpret_cast<int *>(0xb8000);
+  *mem = 0x2f4b2f4f;
+} 
+
 void loadGDT() {
   std::memset(globalDescriptorTable, '\x00', (1<<20));
-  DescriptorReg desc;
+  HannOS::DescriptorReg desc;
   auto descp = &desc;
   asm volatile("lgdt (%0)"
       : "=a"(descp));
@@ -71,7 +76,7 @@ extern "C" void kernel() {
 
   //printbenchmark(display);
   //primes(display);
-  memeditor(display);
+  //memeditor(display);
 
   auto cpuid = HannOS::CPU::getCPUID();
   
