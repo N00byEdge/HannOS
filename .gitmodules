@@ -1,0 +1,3 @@
+[submodule "extern/Bitfields"]
+	path = extern/Bitfields
+	url = git@github.com:N00byEdge/Bitfields.git
