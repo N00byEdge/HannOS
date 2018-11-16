@@ -19,7 +19,7 @@ void primes(DisplayHandle display) {
     if(!nonprime[i / 2]) {
       display().drawi(i);
       display().draws("\n");
-      for(unsigned j = i + i; j < mprime; j += i) {
+      for(unsigned j = i * i; j < mprime; j += i) {
         nonprime[j / 2] = 1;
       }
     }
@@ -67,11 +67,12 @@ extern "C" void kernel() {
   
   Display display{};
   display.clear();
+  display.draws("HannOS critical error\n", 0xe0);
 	display.draws("All processes dieded\n", 0xe0);
 
   //printbenchmark(display);
-  //primes(display);
-  memeditor(display);
+  primes(display);
+  //memeditor(display);
 
   auto cpuid = HannOS::CPU::getCPUID();
   

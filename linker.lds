@@ -7,7 +7,7 @@ SECTIONS {
 
 	.text :{
 		*(.multiboot)
-		*(.text*)
+		*(.text)
 	}
 
 	.rodata :{

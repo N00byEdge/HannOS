@@ -1,4 +1,5 @@
 #include<cstring>
+#include<atomic>
 #include<mutex>
 #include<new>
 
@@ -13,19 +14,23 @@ namespace {
   };
   static_assert(sizeof(FreeNode) == chunkSize);
   FreeNode *currNode = nullptr;
-  FreeNode *nextNode = HannOS::launder(reinterpret_cast<FreeNode *>(0x500000));
+  FreeNode *const heapBase = HannOS::launder(reinterpret_cast<FreeNode *>(0x500000));
+  FreeNode *nextNode = heapBase;
   std::mutex mut;
+  std::atomic<std::intptr_t> freeListSz = 0; //***Only for measuring!!***
 }
 
 void *kMalloc() {
   std::lock_guard<std::mutex> l{mut};
   if(currNode == nullptr) return nextNode++;
+  --freeListSz;
   return std::exchange(currNode, currNode->next);
 }
 
 void kFree(void *ptr) {
   if(!ptr) return;
-  auto node = reinterpret_cast<FreeNode *>(ptr);
+  ++freeListSz;
+  auto node = HannOS::launder(reinterpret_cast<FreeNode *>(ptr));
   std::lock_guard<std::mutex> l{mut};
   node->next = currNode;
   currNode = node;
@@ -33,4 +38,8 @@ void kFree(void *ptr) {
 
 void *kCalloc() {
   return std::memset(kMalloc(), '\x00', 0x1000);
+}
+
+std::intptr_t allocated() {
+  return (nextNode - heapBase - freeListSz.load(std::memory_order_relaxed)) * chunkSize;
 }

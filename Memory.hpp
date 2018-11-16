@@ -5,3 +5,5 @@ void *kMalloc();
 void kFree(void *ptr);
 void *kCalloc();
 
+// Returns the memory allocated, in bytes
+std::intptr_t allocated();
