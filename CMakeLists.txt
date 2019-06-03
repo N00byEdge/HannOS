@@ -14,22 +14,10 @@ set(CMAKE_ASM_FLAGS "")
 file(GLOB loaderfiles ${PROJECT_SOURCE_DIR}/Source/loader/*.s)
 file(GLOB cppfiles ${PROJECT_SOURCE_DIR}/Source/HannOS/*.cpp)
 
-# add_library(loader32
-#   ${loaderfiles}
-# )
-
-# add_custom_command(
-#   OUTPUT libloader64.a DEPENDS loader32
-#   COMMAND objcopy -O elf64-x86-64 libloader32.a libloader64.a
-# )
-
 add_executable(${PROJECT_NAME}.bin
   ${cppfiles}
   ${loaderfiles}
 )
-
-# add_custom_target(loader64_target DEPENDS libloader64.a)
-# add_dependencies(${PROJECT_NAME}.bin loader64_target)
 
 target_include_directories(${PROJECT_NAME}.bin
   PRIVATE ${PROJECT_SOURCE_DIR}/Source/include
@@ -46,8 +34,7 @@ set_target_properties(${PROJECT_NAME}.bin
 
 add_custom_target(iso ALL
   DEPENDS ${PROJECT_NAME}.bin
-  COMMAND cp ${PROJECT_NAME}.bin iso/boot/${PROJECT_NAME}.bin
-  #COMMAND strip ${PROJECT_NAME}.bin -o iso/boot/${PROJECT_NAME}.bin
+  COMMAND strip ${PROJECT_NAME}.bin -o iso/boot/${PROJECT_NAME}.bin
   COMMAND grub-mkrescue -o ${PROJECT_NAME}.iso iso
 )
 
