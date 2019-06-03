@@ -21,18 +21,21 @@ stack:
 .code32
 .section .loadertext
 loader:
-  # Set up paging, clear memory
+  # Clear memory for page tables
+  cld
   xor eax, eax
+  mov edi, 0x1000
   mov ecx, 0x1000
-  rep stos dword ptr[0x1000]
-  # memset(0x1000, 0, 0x4000)
+  rep stosd
 
   # 0x0003 mask says present and readwrite
-  mov dword ptr [0x1000], 0x2003 # PDPT at 0x2000
-  mov dword ptr [0x2000], 0x3003 # PDT at 0x3000
-  mov dword ptr [0x3000], 0x4003 # PT at 0x4000
+  mov edi, 0x1000                      # PML4T at 0x1000
+  mov dword ptr [edi], 0x2003          # PDPT at 0x2000
+  mov dword ptr [edi + 0x1000], 0x3003 # PDT at 0x3000
+  mov dword ptr [edi + 0x2000], 0x4003 # PT at 0x4000
 
   # Fill page table
+  mov edi, 0x4000
   mov ebx, 0x00000003 # 0x00000003 mask again for present and writable
   mov ecx, 512        # Identity map first 2M = 4K(page size) * 512 pages, one full PT
 pageEntry:
@@ -59,6 +62,7 @@ pageEntry:
   # Enable paging
   mov eax, cr0
   or eax, 1 << 31
+  mov cr0, eax
 
   # Load 64 bit global descriptor table for long jump
   lgdt [gdtpointer]
