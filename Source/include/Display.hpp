@@ -62,6 +62,31 @@ struct Display {
     }
   }
 
+  struct NewLine_T{};
+  inline static NewLine_T NewLine;
+
+  template<typename T>
+  struct isStdArray: std::false_type { };
+  template<std::size_t n>
+  struct isStdArray<std::array<char, n>>: std::true_type {};
+
+  template<typename ...Ts>
+  void drawvar(Ts &&...vs) {
+    auto const f = [&](auto val) {
+      if constexpr(std::is_integral_v<decltype(val)>)
+        return drawi(val);
+      if constexpr(std::is_pointer_v<decltype(val)>
+                || std::is_array_v<decltype(val)>
+                || isStdArray<decltype(val)>::value)
+        if constexpr(std::is_same_v<std::decay<decltype(val[0])>, char>)
+          return draws(val);
+      if constexpr(std::is_same_v<decltype(val), NewLine_T>)
+        return feedLine();
+      //static_assert(!std::is_same_v<decltype(val), decltype(val)>, "LOL FAIL");
+    };
+    (f(std::forward<Ts>(vs)), ...);
+  }
+
   void clear() {
     drawn = -1;
     for(int y = 0; y < ScreenHeight; ++ y) {

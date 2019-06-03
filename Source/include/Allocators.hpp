@@ -36,12 +36,12 @@ namespace HannOS {
     T *addr = launder(reinterpret_cast<T *>(startAddress));
   };
 
-  template<typename T>
+  /*template<typename T>
   [[nodiscard]] T *launder(T *arg) noexcept {
     static_assert(!(std::is_function<T>::value),
       "Can't launder functions");
     static_assert(!(std::is_same<void, typename std::remove_cv<T>::type>::value),
       "Can't launder cv-void" );
     return arg;
-  }
+  }*/
 }

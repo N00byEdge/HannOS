@@ -3,29 +3,42 @@
 #include <string>
 
 #include "Bitfields.hpp"
+#include "Interrupt.hpp"
 
 namespace HannOS::CPU {
-  using CPUIdentifier = std::array<char, 12>;
+  template<typename T, typename Port>
+  T in(Port port) {
+    T retval;
+    asm volatile("in %1, %0":"=a"(retval):"Nd"(port));
+    return retval;
+  }
+
+  inline auto inb = [](auto port) { return in<std::uint16_t>(port); };
+  inline auto inw = [](auto port) { return in<std::uint32_t>(port); };
+  inline auto inl = [](auto port) { return in<std::uint64_t>(port); };
+
+  template<typename Port, typename T>
+  void out(Port port, T value) {
+    asm volatile("out %0, %1"::"a"(value),"Nd"(port));
+  }
+
+  inline auto outb = [](auto port, auto value) { out<std::uint16_t>(port, value); };
+  inline auto outw = [](auto port, auto value) { out<std::uint32_t>(port, value); };
+  inline auto outl = [](auto port, auto value) { out<std::uint64_t>(port, value); };
+
+  union CPUIdentifier {
+    struct {
+      std::uint32_t ebx;
+      std::uint32_t edx;
+      std::uint32_t ecx;
+    };
+    std::array<char, 12> chars;
+  };
   struct CPUInfo {
     CPUInfo():
-
-    identifier {
-      [&] {
-        CPUIdentifier id;
-        getVendorIdentifier(id);
-        return id;
-      }()
-    }
-
-    , maxFunc{getMaxFunc()}
-
-    , features{
-      [&]{
-        Features feat;
-        getFeatures(feat);
-        return feat;
-      }()
-    }
+      identifier {getVendorIdentifier()}
+    , maxFunc    {getMaxFunc()}
+    , features   {getFeatures()}
 
     { }
 
@@ -124,45 +137,30 @@ namespace HannOS::CPU {
     Features features;
 
   private:
-    __attribute__ ((naked))
-    void getVendorIdentifier(CPUIdentifier &) {
-      asm(R"(
-        xor %eax, %eax
-        cpuid
-        movl 4(%esp), %eax
-        movl %ebx, (%eax)
-        movl %edx, 4(%eax)
-        movl %ecx, 8(%eax)
-        ret
-      )");
+    static auto getVendorIdentifier() -> CPUIdentifier {
+      CPUIdentifier ident;
+      asm("cpuid" : "=b"(ident.ebx)
+                  , "=c"(ident.ecx)
+                  , "=d"(ident.edx)
+                  : "0"(0x0)
+                  : "eax");
+      return ident;
     }
 
-    __attribute__ ((naked))
-    void getFeatures(Features &) {
-      asm(R"(
-        push %rbx
-        movl $1, %eax
-        cpuid
-        push %rax
-        movl 16(%esp), %eax
-        movl %ebx, 4(%eax)
-        movl %ecx, 8(%eax)
-        movl %edx, 12(%eax)
-        pop %rbx
-        movl %ebx, (%eax)
-        pop %rbx
-        ret
-      )");
+    static auto getFeatures() -> Features {
+      Features f;
+      asm("cpuid" : "=a"(f.eax)
+                  , "=b"(f.ebx)
+                  , "=c"(f.ecx)
+                  , "=d"(f.edx)
+                  : "0"(0x1));
+      return f;
     }
 
-
-    __attribute__ ((naked))
-    inline int getMaxFunc() {
-      asm(R"(
-        movl $0x80000000, %eax
-        cpuid
-        ret
-      )");
+    static auto getMaxFunc() -> int {
+      int val;
+      asm("cpuid" : "=a"(val) : "0"(0x80000000) : "ebx", "ecx", "edx");
+      return val;
     }
   };
 

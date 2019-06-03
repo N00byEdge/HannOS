@@ -21,7 +21,7 @@ namespace HannOS {
     UniquePtr(UniquePtr const &) = delete;
     UniquePtr &operator=(UniquePtr const &) = delete;
 
-    UniquePtr(UniquePtr &&other) noexcept: UniquePtr{other.release()}, Deleter{other.deleter} { }
+    UniquePtr(UniquePtr &&other) noexcept: UniquePtr{other.release()} { }
     UniquePtr &operator=(UniquePtr &&other) noexcept { reset(); val = other.release(); return *this; };
 
     ~UniquePtr() noexcept { reset(); }
@@ -54,14 +54,14 @@ namespace HannOS {
     UniquePtr<T, Deleter> ptr;
       // Exceptions are currently disabled until further notice.
       // This needs to be reenabled as soon as possible.
+      auto n = alloc.allocate(1);
       //try {
-        auto n = alloc.allocate(1);
         new (n) T(args...);
-        ptr = n;
       //} catch(...) {
-      //  Deleter::deallocate(ptr.get(), 1);
+      //  Deleter::deallocate(n, 1);
+      //  throw;
       //}
-    return ptr;
+      return ptr = n;
   }
 
   template<typename T, typename Allocator, typename Deleter = DefaultDeleter<T, Allocator>>

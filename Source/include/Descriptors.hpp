@@ -69,7 +69,7 @@ namespace HannOS {
   static_assert(sizeof(SegmentDescriptor) == 8);
 }
 
-extern HannOS::SegmentDescriptor globalDescriptorTable[0x100000];
+extern HannOS::SegmentDescriptor globalDescriptorTable[8];
 
 namespace HannOS {
   #pragma pack(push, 1)
