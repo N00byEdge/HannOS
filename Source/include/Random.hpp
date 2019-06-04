@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace HannOS::CPU {
+namespace HannOS {
   struct Random {
     using result_type = std::uint64_t;
     static constexpr result_type min() { return std::numeric_limits<std::uint64_t>::min(); }
