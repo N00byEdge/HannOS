@@ -6,25 +6,36 @@
 #include "Interrupt.hpp"
 
 namespace HannOS::CPU {
-  template<typename T, typename Port>
-  T in(Port port) {
+  template<typename T>
+  T in(std::uint16_t port) {
     T retval;
     asm volatile("in %1, %0":"=a"(retval):"Nd"(port));
     return retval;
   }
 
-  inline auto inb = [](auto port) { return in<std::uint16_t>(port); };
-  inline auto inw = [](auto port) { return in<std::uint32_t>(port); };
-  inline auto inl = [](auto port) { return in<std::uint64_t>(port); };
+  template<typename T, std::uint16_t port>
+  T in() {
+    T retval;
+    asm volatile("in %1, %0" : "=a"(retval):"Nd"(port));
+  }
 
-  template<typename Port, typename T>
-  void out(Port port, T value) {
+  inline auto inb = [](auto port) { return in<std::uint8_t> (port); };
+  inline auto inw = [](auto port) { return in<std::uint16_t>(port); };
+  inline auto inl = [](auto port) { return in<std::uint32_t>(port); };
+
+  template<typename T>
+  void out(std::uint16_t port, T value) {
     asm volatile("out %0, %1"::"a"(value),"Nd"(port));
   }
 
-  inline auto outb = [](auto port, auto value) { out<std::uint16_t>(port, value); };
-  inline auto outw = [](auto port, auto value) { out<std::uint32_t>(port, value); };
-  inline auto outl = [](auto port, auto value) { out<std::uint64_t>(port, value); };
+  template<std::uint16_t port, typename T>
+  void out(T value) {
+    asm volatile("out %0, %1"::"a"(value),"Nd"(port));
+  }
+
+  inline auto outb = [](auto port, auto value) { out<std::uint8_t> (port, value); };
+  inline auto outw = [](auto port, auto value) { out<std::uint16_t>(port, value); };
+  inline auto outl = [](auto port, auto value) { out<std::uint32_t>(port, value); };
 
   union CPUIdentifier {
     struct {
