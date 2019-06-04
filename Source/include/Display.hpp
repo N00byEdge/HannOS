@@ -73,12 +73,12 @@ struct Display {
   template<typename ...Ts>
   void drawvar(Ts &&...vs) {
     auto const f = [&](auto val) {
-      if constexpr(std::is_integral_v<decltype(val)>)
+      if constexpr(std::is_integral_v<std::decay_t<decltype(val)>>)
         return drawi(val);
-      if constexpr(std::is_pointer_v<decltype(val)>
-                || std::is_array_v<decltype(val)>
-                || isStdArray<decltype(val)>::value)
-        if constexpr(std::is_same_v<std::decay<decltype(val[0])>, char>)
+      if constexpr(std::is_pointer_v<std::decay_t<decltype(val)>>
+                || std::is_array_v<std::decay_t<decltype(val)>>
+                || isStdArray<std::decay_t<decltype(val)>>::value)
+        if constexpr(std::is_same_v<std::decay_t<decltype(val[0])>, char>)
           return draws(val);
       if constexpr(std::is_same_v<decltype(val), NewLine_T>)
         return feedLine();
