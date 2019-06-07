@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "String.hpp"
 
+#include <algorithm>
 #include <cstring>
 
 extern "C" void kernel();
@@ -12,6 +13,8 @@ namespace HannOS {
     Display(Display &&) = delete;
     Display &operator=(Display const &) = delete;
     Display &operator=(Display &&) = delete;
+
+    inline static std::uint8_t style = 0x07;
 
     enum {
       ScreenWidth = 80,
@@ -98,6 +101,9 @@ namespace HannOS {
         {
           if constexpr(std::is_same_v<std::decay_t<decltype(val[0])>, char>)
             return draws(val);
+          else if constexpr(std::is_array_v<std::decay_t<decltype(val)>>
+                         || isStdArray<std::decay_t<decltype(val)>>::value)
+            drawiarr(val, " ");
           else
             return drawi(reinterpret_cast<std::intptr_t>(val));
         }
@@ -159,6 +165,13 @@ namespace HannOS {
         std::memmove(reinterpret_cast<char *>(0xb8000)
                    , reinterpret_cast<char *>(0xb8000) + ScreenWidth * 2
                    , ScreenWidth * (ScreenHeight - 1) * 2);
+        // Clear last line
+        std::for_each(
+          reinterpret_cast<std::uint16_t *>(0xb8000) + ScreenWidth * (ScreenHeight - 1),
+          reinterpret_cast<std::uint16_t *>(0xb8000) + ScreenWidth *  ScreenHeight,
+        [](std::uint16_t &val){
+          val = ' ' | static_cast<std::uint16_t>(style) << 8;
+        });
       }
     }
 
