@@ -8,7 +8,9 @@ namespace Impl {
   struct NumChars: std::integral_constant<int, sizeof(T) * 2> { };
   template <>
   struct NumChars<bool>: std::integral_constant<int, 1> { };
+
   template<bool nullTerminate = true, typename T>
+  [[nodiscard]]
   constexpr auto to_chars(T val) {
     std::array<char, NumChars<T>::value + nullTerminate> ret{};
 
@@ -26,6 +28,7 @@ namespace Impl {
 
   template<bool nullTerminate, typename T>
   struct to_chars_impl {
+    [[nodiscard]]
     constexpr auto operator()(T const &val) {
       if constexpr(std::is_pointer_v<T>) {
         return to_chars<nullTerminate>(reinterpret_cast<std::intptr_t>(val));
@@ -38,6 +41,7 @@ namespace Impl {
 }
 
 template<bool nullTerminate = true, typename T>
+[[nodiscard]]
 auto to_chars(T const &val) {
   return Impl::to_chars_impl<nullTerminate, T>{}(val);
 }
