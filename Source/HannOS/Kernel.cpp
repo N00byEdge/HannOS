@@ -59,12 +59,12 @@ using namespace std::string_view_literals;
 
 void CMatrixPP(HannOS::DisplayHandle disp) {
   //HannOS::CPU::outb(0x3D4, 0x0A);
-	//HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xC0) | 0);
+  //HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xC0) | 0);
  
-	HannOS::CPU::outb(0x3D4, 0x0B);
-	HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xE0) | 0);
-  HannOS::CPU::outb(0x3d4, 0x0a);
-  HannOS::CPU::outb(0x3d5, 0x20);
+  // HannOS::CPU::outb(0x3D4, 0x0B);
+  // HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xE0) | 0);
+  // HannOS::CPU::outb(0x3d4, 0x0a);
+  // HannOS::CPU::outb(0x3d5, 0x20);
   //outb(0x3D4, 0x0A);
   //outb(0x3D5, 0x20);
   disp().clear();
@@ -156,27 +156,4 @@ extern "C" void kernel() {
                 "headquarters are working VEWY HAWD to fix this!\n"
     , 0x1f
   );
-
-  /*auto val = HannOS::kMalloc();
-  display.draws("Allocated 0x1000 at ");
-  display.drawi(val);
-  display.feedLine();
-
-  auto val2 = HannOS::kMalloc();
-  display.draws("Allocated 0x1000 at ");
-  display.drawi(val2);
-  display.feedLine();
-
-  HannOS::kFree(val);
-  HannOS::kFree(val2);
-
-  val = HannOS::kMalloc();
-  display.draws("Allocated 0x1000 at ");
-  display.drawi(val);
-  display.feedLine();
-
-  val2 = HannOS::kMalloc();
-  display.draws("Allocated 0x1000 at ");
-  display.drawi(val2);
-  display.feedLine();*/
 }
