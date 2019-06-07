@@ -1,8 +1,5 @@
 .intel_syntax noprefix
 
-.global loader
-.extern kernel
-
 .code64
 .section .data
 gdt:     .quad 0x000100000000ffff
@@ -20,7 +17,8 @@ stack:
 
 .code32
 .section .loadertext
-loader:
+.global loader
+        loader:
   # Clear memory for page tables
   cld
   xor eax, eax
@@ -74,8 +72,19 @@ go64:
   # Set stack for C runtime
   mov rsp, offset stack
 
+  # Call global constructors
+.extern doConstructors
+  call  doConstructors
+
   # Go 64 bit kernel
-  call kernel
+.extern kernel
+  call  kernel
+
+  # Call global destructors
+.extern doDestructors
+  call  doDestructors
+
+  # Halt
   cli
 haltForReals:
   hlt

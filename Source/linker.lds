@@ -12,6 +12,16 @@ SECTIONS {
 	}
 
 	.rodata :{
+		constructorsStart = .;
+		KEEP(*( .init_array ));
+		KEEP(*(SORT_BY_INIT_PRIORITY( .init_array.* )));
+		constructorsEnd = .;
+
+		destructorsStart = .;
+		KEEP(*( .fini_array ));
+		KEEP(*(SORT_BY_INIT_PRIORITY( .fini_array.* )));
+		destructorsEnd = .;
+
 		*(.rodata)
 	}
 
@@ -28,7 +38,6 @@ SECTIONS {
 	}
 
 	/DISCARD/ : {
-		*(.fini_array)
 		*(.comment)
 	}
 }
