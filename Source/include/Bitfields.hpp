@@ -3,6 +3,6 @@
 namespace HannOS::Util {
   #include "Bitfields/Bitfield.hpp"
 
-  template<auto ...T>
-  using Bitfield = Bitfields::Bitfield<T...>;
+  template<unsigned startBit, unsigned numBits, typename T = std::uint32_t>
+  using Bitfield = Bitfields::Bitfield<startBit, numBits, T>;
 }
