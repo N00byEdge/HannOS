@@ -85,6 +85,8 @@ namespace HannOS {
     template<typename ...Ts>
     static void drawvar(Ts &&...vs) {
       auto const f = [&](auto val) {
+        if constexpr(std::is_same_v<std::decay_t<decltype(val)>, char>)
+          return draw(val);
         if constexpr(std::is_integral_v<std::decay_t<decltype(val)>>)
           return drawi(val);
         if constexpr(std::is_same_v<std::decay_t<decltype(val)>, void *>)
@@ -164,7 +166,10 @@ namespace HannOS {
     friend struct DisplayHandle;
   };
 
-  static inline Display ActiveDisplay{};
+  static inline Display ActiveDisplay{[]() -> Display {
+    Display::clear();
+    return {};
+  }()};
 
   struct DisplayHandle {
     DisplayHandle(Display &d) : disp{ d }, lastDrawn{ std::exchange(d.drawn, 0) } {

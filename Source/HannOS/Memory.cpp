@@ -4,7 +4,6 @@
 #include<new>
 
 #include "Memory.hpp"
-#include "Containers.hpp"
 
 namespace HannOS::Memory {
   namespace {
@@ -73,4 +72,10 @@ namespace HannOS::Memory {
     std::memset(ret.mem(), '\x00', 0x1000);
     return ret;
   }
+}
+
+#include "Multiboot2.hpp"
+
+void HannOS::Multiboot2::MemoryMap::handle() {
+  Display::drawvar("FIXME: Handle memory map", Display::NewLine);
 }

@@ -14,11 +14,17 @@ gdtpointer:
 .global stack
 stack:
 .space 8
+.global multibootInfoLoc
+multibootInfoLoc:
+.quad 0x0 # 64 bit ptr
 
 .code32
 .section .loadertext
 .global loader
         loader:
+  # Store multiboot info struct location
+  mov dword ptr[multibootInfoLoc], ebx
+
   # Clear memory for page tables
   cld
   xor eax, eax
@@ -75,6 +81,10 @@ go64:
   # Call global constructors
 .extern doConstructors
   call  doConstructors
+
+# Set up memory map
+.extern loadMultibootInfo
+  call  loadMultibootInfo
 
   # Go 64 bit kernel
 .extern kernel

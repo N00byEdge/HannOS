@@ -2,16 +2,20 @@ ENTRY(loader)
 OUTPUT_FORMAT(elf64-x86-64)
 OUTPUT_ARCH(i386:x86-64)
 
+ENTRY(loader)
+
 SECTIONS {
 	. = 0x5000;
 
-	.text :{
+	.text BLOCK(4K) : ALIGN(4K) {
 		*(.multiboot)
 		*(.loadertext)
 		*(.text)
 	}
 
-	.rodata :{
+	. = 1M;
+
+	.rodata BLOCK(4K) : ALIGN(4K) {
 		constructorsStart = .;
 		KEEP(*( .init_array ));
 		KEEP(*(SORT_BY_INIT_PRIORITY( .init_array.* )));
@@ -25,17 +29,16 @@ SECTIONS {
 		*(.rodata)
 	}
 
-	.data :{
+	.data BLOCK(4K) : ALIGN(4K) {
 		*(.data);
 	}
 
-	.bss :{
+	.bss BLOCK(4K) : ALIGN(4K) {
 		*(.bss)
 	}
 
-	.gdt :{
-		*(.gdt)
-	}
+	. = ALIGN(4K);
+	heapBase = .;
 
 	/DISCARD/ : {
 		*(.comment)

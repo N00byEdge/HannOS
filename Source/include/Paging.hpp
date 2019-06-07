@@ -48,7 +48,7 @@ namespace HannOS::Paging {
     }
 
     constexpr std::int64_t size() const {
-      return 256;
+      return PageDirSize;
     }
   };
 
@@ -79,7 +79,7 @@ namespace HannOS::Paging {
     }
 
     constexpr std::int64_t size() const {
-      return 0x1000;
+      return PageSize;
     }
   };
 
