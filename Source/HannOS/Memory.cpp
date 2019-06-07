@@ -3,45 +3,74 @@
 #include<mutex>
 #include<new>
 
+#include "Memory.hpp"
 #include "Containers.hpp"
 
-namespace {
-  // Allocation only in 0x1000 / 4k chunks
-  static constexpr auto chunkSize = 0x1000;
-  union FreeNode {
-    FreeNode *next;
-    char size[chunkSize];
-  };
-  static_assert(sizeof(FreeNode) == chunkSize);
-  FreeNode *currNode = nullptr;
-  FreeNode *const heapBase = reinterpret_cast<FreeNode *>(0x500000);
-  FreeNode *nextNode = heapBase;
-  std::atomic<std::intptr_t> freeListSz = 0; //***Only for measuring!!***
-  std::mutex mut;
-}
+namespace HannOS::Memory {
+  namespace {
+    union FreeNode {
+      FreeNode *next;
+      std::uint8_t size[Paging::PageSize];
+    };
+    static_assert(sizeof(FreeNode) == Paging::PageSize);
+    FreeNode *currNode = nullptr;
+    FreeNode *const heapBase = reinterpret_cast<FreeNode *> (0x100000);
+    FreeNode *mappedAtStartup = reinterpret_cast<FreeNode *>(0x200000);
 
-namespace HannOS {
-  void *kMalloc() {
+    FreeNode *mappedTotal = mappedAtStartup;
+    FreeNode *nextNode = heapBase;
+
+    struct Ignore {
+      Ignore() { ignoreSize_ = true; }
+      ~Ignore() noexcept { ignoreSize_ = false; }
+      static bool ignoreSize() { return ignoreSize_; }
+    private:
+      static inline bool ignoreSize_ = false;
+    };
+
+    auto mappedLeft() {
+      return mappedTotal - nextNode;
+    }
+
+    std::mutex mut;
+
+    // Since paging will fetch pages from us, we have
+    // to stay a bit ahead (0x10 pages should be enough)
+    // one for each level * 2 - 1, then some headroom
+    constexpr auto pagesToKeepAhead = 0x10;
+  }
+
+  PageAllocation fetchPage() {
     std::lock_guard<std::mutex> l{mut};
-    if(currNode == nullptr) return nextNode++;
-    --freeListSz;
+    if(currNode == nullptr) {
+      if(!Ignore::ignoreSize() && mappedLeft() < pagesToKeepAhead) {
+        Paging::PageTableEntry pte{};
+        pte.present = 1;
+        pte.writeEnable = 1;
+        // Temporarily ignore size of heap as we might call ourselves, but we should
+        // be ahead enough (as many pages as it can allocate)
+        Ignore size{};
+        pte.addrBits = reinterpret_cast<std::intptr_t>(mappedTotal) >> 12;
+        Paging::setMap(mappedTotal++, pte);
+        // This should have yielded us 512 new pages,
+        // while using at most max_levels * 2 - 1, a net gain
+      }
+      return PageAllocation{nextNode++};
+    }
     return std::exchange(currNode, currNode->next);
   }
 
-  void kFree(void *ptr) {
+  void PageAllocation::freePage(void *ptr) {
     if(!ptr) return;
-    ++freeListSz;
     auto node = reinterpret_cast<FreeNode *>(ptr);
     std::lock_guard<std::mutex> l{mut};
     node->next = currNode;
     currNode = node;
   }
 
-  void *kCalloc() {
-    return std::memset(kMalloc(), '\x00', 0x1000);
-  }
-
-  std::intptr_t allocated() {
-    return (nextNode - heapBase - freeListSz.load(std::memory_order_relaxed)) * chunkSize;
+  PageAllocation fetchClearPage() {
+    auto ret = fetchPage();
+    std::memset(ret.mem(), '\x00', 0x1000);
+    return ret;
   }
 }

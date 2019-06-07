@@ -4,6 +4,7 @@
 #include "CPU.hpp"
 #include "Memory.hpp"
 #include "Random.hpp"
+#include "Paging.hpp"
 
 #include <random>
 
