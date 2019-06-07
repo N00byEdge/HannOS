@@ -13,8 +13,6 @@ SECTIONS {
 		*(.text)
 	}
 
-	. = 1M;
-
 	.rodata BLOCK(4K) : ALIGN(4K) {
 		constructorsStart = .;
 		KEEP(*( .init_array ));
@@ -31,6 +29,9 @@ SECTIONS {
 
 	.data BLOCK(4K) : ALIGN(4K) {
 		*(.data);
+		multibootDataSpace = .;
+		. += 16K;
+		multibootDataEnd = .;
 	}
 
 	.bss BLOCK(4K) : ALIGN(4K) {
@@ -38,7 +39,7 @@ SECTIONS {
 	}
 
 	. = ALIGN(4K);
-	heapBase = .;
+	kernelEnd = .;
 
 	/DISCARD/ : {
 		*(.comment)

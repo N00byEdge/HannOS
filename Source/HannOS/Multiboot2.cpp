@@ -1,15 +1,35 @@
 #include "Multiboot2.hpp"
 
+#include "CPU.hpp"
+
 namespace HannOS::Multiboot2 {
   struct MultibootInfo {
     std::uint32_t total_size;
     std::uint32_t reserved;
   };
 
-  extern "C" MultibootInfo *multibootInfoLoc;
+  extern "C" std::uint32_t *const multibootInfoLoc;
+  extern "C" char multibootDataSpace[];
+  extern "C" char multibootDataEnd;
+  auto const maxSize = &multibootDataEnd - &multibootDataSpace[0];
 
   extern "C" void loadMultibootInfo() {
-    auto curr = reinterpret_cast<std::uint32_t *>(multibootInfoLoc) + 2;
+    if(!multibootInfoLoc) {
+      Display::drawvar("Multiboot info not found!", Display::NewLine);
+      HannOS::CPU::halt();
+    }
+    //Display::drawvar("Multiboot found at ", multibootInfoLoc, Display::NewLine);
+    auto const mbSize = *multibootInfoLoc;
+    if(mbSize > maxSize) {
+      Display::drawvar(
+        "Multiboot field too large (", mbSize, "). Maximum size is ",
+        maxSize, Display::NewLine  
+      );
+      HannOS::CPU::halt();
+    }
+    std::memcpy(&multibootDataSpace[0], multibootInfoLoc, mbSize);
+
+    auto curr = reinterpret_cast<std::uint32_t *>(&multibootDataSpace[0]) + 2;
     while(1) {
       auto type = *curr;
       auto sz = *(curr + 1);
@@ -47,7 +67,7 @@ namespace HannOS::Multiboot2 {
           reinterpret_cast<ACPIRSDPv2 *>(curr)->handle();
           break;
         default:
-          HannOS::Display::drawvar("Unhandled multiboot field: ", type, ' ', sz, HannOS::Display::NewLine);
+          Display::drawvar("FIXME: Unhandled multiboot field: ", type, ' ', sz, Display::NewLine);
       }
       if(sz % 8 != 0)       // Entries are padded
         sz += 8 - (sz % 8); // to be 8-byte aligned

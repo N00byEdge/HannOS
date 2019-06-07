@@ -11,6 +11,18 @@ mbbegin:
   .long Arch
   .long mblen
   .long Checksum
+
+  # .align 8
+
+  # .word 0x5
+  # .word 0
+  # .long 20
+  # .long 800
+  # .long 600
+  # .long 8
+
+  .align 8
+
   .word 0
   .word 0
   .long 8

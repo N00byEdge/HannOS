@@ -16,7 +16,7 @@ stack:
 .space 8
 .global multibootInfoLoc
 multibootInfoLoc:
-.quad 0x0 # 64 bit ptr
+.quad # 64 bit ptr
 
 .code32
 .section .loadertext
@@ -82,7 +82,7 @@ go64:
 .extern doConstructors
   call  doConstructors
 
-# Set up memory map
+  # Load multiboot info
 .extern loadMultibootInfo
   call  loadMultibootInfo
 

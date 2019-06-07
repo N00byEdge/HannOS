@@ -11,10 +11,10 @@ namespace HannOS::Multiboot2 {
     std::uint32_t size;
 
     void handle() {
-      HannOS::Display::drawvar(
+      /*HannOS::Display::drawvar(
         "Command line: ", reinterpret_cast<char const *>(this) + sizeof(*this),
         HannOS::Display::NewLine
-      );
+      );*/
     }
   };
   static_assert(sizeof(CommandLine) == 8);
@@ -25,10 +25,10 @@ namespace HannOS::Multiboot2 {
     std::uint32_t size;
 
     void handle() {
-      HannOS::Display::drawvar(
+      /*HannOS::Display::drawvar(
         "Bootloader: ", reinterpret_cast<char const *>(this) + sizeof(*this),
         HannOS::Display::NewLine
-      );
+      );*/
     }
   };
   static_assert(sizeof(CommandLine) == 8);
@@ -41,10 +41,10 @@ namespace HannOS::Multiboot2 {
     std::uint32_t mem_upper;
 
     void handle() {
-      HannOS::Display::drawvar(
+      /*HannOS::Display::drawvar(
         "Basic memory info: low = ", mem_lower, " high = ", mem_upper,
         HannOS::Display::NewLine
-      );
+      );*/
     }
   };
   static_assert(sizeof(BasicMemoryInfo) == 16);
@@ -58,10 +58,10 @@ namespace HannOS::Multiboot2 {
     std::uint32_t sub_partition;
 
     void handle() {
-      HannOS::Display::drawvar(
+      /*HannOS::Display::drawvar(
         "BIOS booted: ", biosdev, ':', partition, '-', sub_partition,
         HannOS::Display::NewLine
-      );
+      );*/
     }
   };
   static_assert(sizeof(BIOSBootDevice) == 20);
@@ -90,8 +90,8 @@ namespace HannOS::Multiboot2 {
     std::uint8_t  reserved;
 
     void handle() {
-      auto fb = framebuffer_addr;
-      HannOS::Display::drawvar("Frame buffer at ", fb, HannOS::Display::NewLine);
+      /*auto fb = framebuffer_addr;
+      HannOS::Display::drawvar("Frame buffer at ", fb, HannOS::Display::NewLine);*/
     }
   }__attribute__((packed));
   static_assert(sizeof(FramebufferInfo) == 31);
@@ -106,7 +106,7 @@ namespace HannOS::Multiboot2 {
     std::uint16_t reserved;
 
     void handle() {
-      HannOS::Display::drawvar("FIXME: Handle ELF symbols", HannOS::Display::NewLine);
+      //HannOS::Display::drawvar("FIXME: Handle ELF symbols", HannOS::Display::NewLine);
     }
   };
   static_assert(sizeof(ELFSymbols) == 16);
@@ -126,7 +126,7 @@ namespace HannOS::Multiboot2 {
     std::uint16_t dseg_len;
 
     void handle() {
-      HannOS::Display::drawvar("FIXME: Handle APM table", HannOS::Display::NewLine);
+      //HannOS::Display::drawvar("FIXME: Handle APM table", HannOS::Display::NewLine);
     }
   };
   static_assert(sizeof(APMTable) == 28);
@@ -137,7 +137,7 @@ namespace HannOS::Multiboot2 {
     std::uint32_t size;
 
     void handle() {
-      HannOS::Display::drawvar("ACPI RSDPv1 with size ", size, HannOS::Display::NewLine);
+      //HannOS::Display::drawvar("ACPI RSDPv1 with size ", size, HannOS::Display::NewLine);
     }
   };
   static_assert(sizeof(ACPIRSDPv1) == 8);
@@ -148,7 +148,7 @@ namespace HannOS::Multiboot2 {
     std::uint32_t size;
 
     void handle() {
-      HannOS::Display::drawvar("ACPI RSDPv2 with size ", size, HannOS::Display::NewLine);
+      //HannOS::Display::drawvar("ACPI RSDPv2 with size ", size, HannOS::Display::NewLine);
     }
   };
   static_assert(sizeof(ACPIRSDPv2) == 8);
