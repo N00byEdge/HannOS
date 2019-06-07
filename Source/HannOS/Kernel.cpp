@@ -7,7 +7,7 @@
 
 #include <random>
 
-void primes(DisplayHandle display) {
+void primes(HannOS::DisplayHandle display) {
   constexpr unsigned mprime = 64*1024;
   char nonprime[mprime/2]{0, 1, 0};
   for(unsigned i = 3; i < mprime; i += 2) {
@@ -21,17 +21,16 @@ void primes(DisplayHandle display) {
   }
 }
 
-void printbenchmark(DisplayHandle display) {
+void printbenchmark(HannOS::DisplayHandle display) {
   for(int i = 0; i < 0x10000; ++ i) {
     display().setCursor(0, 0);
     display().drawi(i);
   }
 }
 
-void memeditor(DisplayHandle disp) {
+void memeditor(HannOS::DisplayHandle disp) {
   //int *dummy = nullptr;
   //auto base = reinterpret_cast<int *>(&dummy);
-  //auto base = reinterpret_cast<int *>(globalDescriptorTable);
   auto base = reinterpret_cast<std::uint32_t *>(0xb8000);
   int direction = 1;
 
@@ -40,7 +39,7 @@ void memeditor(DisplayHandle disp) {
     disp().setCursor(0, 0);
     disp().draws("Editing ");
     disp().drawi(reinterpret_cast<std::size_t>(base));
-    for (int y = 1; y < Display::ScreenHeight; ++y) {
+    for (int y = 1; y < HannOS::Display::ScreenHeight; ++y) {
       disp().setCursor(0, y);
       disp().drawi(reinterpret_cast<std::size_t>(addr));
       disp().draws(":");
@@ -57,8 +56,7 @@ void memeditor(DisplayHandle disp) {
 using namespace std::string_view_literals;
 #include <algorithm>
 
-void CMatrixPP(DisplayHandle disp) {
-
+void CMatrixPP(HannOS::DisplayHandle disp) {
   //HannOS::CPU::outb(0x3D4, 0x0A);
 	//HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xC0) | 0);
  
@@ -71,13 +69,13 @@ void CMatrixPP(DisplayHandle disp) {
   disp().clear();
   struct Bunch {
     int start = std::uniform_int_distribution<int>
-      {0, Display::ScreenHeight}
+      {0, HannOS::Display::ScreenHeight}
       (HannOS::RandomDevice);
-    int end = Display::ScreenHeight;
+    int end = HannOS::Display::ScreenHeight;
   };
-  std::array<Bunch, Display::ScreenWidth> bunches;
+  std::array<Bunch, HannOS::Display::ScreenWidth> bunches;
   auto updateBunch = [&](Bunch &bunch, int x) {
-    if(bunch.start == Display::ScreenHeight) {
+    if(bunch.start == HannOS::Display::ScreenHeight) {
         // chance to start over
         if(std::uniform_int_distribution<int>{0, 25}(HannOS::RandomDevice)) {
           return;
@@ -92,10 +90,10 @@ void CMatrixPP(DisplayHandle disp) {
       if (!std::uniform_int_distribution<int>{0, 16}(HannOS::RandomDevice))
         return;
       // Update the bunch
-      if(bunch.end > 0 && bunch.end <= Display::ScreenHeight) {
+      if(bunch.end > 0 && bunch.end <= HannOS::Display::ScreenHeight) {
         disp().decorate(x, bunch.end - 1, 0x0a); // Color character drawn last update green
       }
-      if(++bunch.end <= Display::ScreenHeight) {
+      if(++bunch.end <= HannOS::Display::ScreenHeight) {
         // Make new character
         char sample;
         constexpr auto chars = ""sv
@@ -105,13 +103,13 @@ void CMatrixPP(DisplayHandle disp) {
         disp().decorate(x, bunch.end - 1, 0x0f); // Color character white
         disp().draw(x, bunch.end - 1, sample);   // Set to the sampled character
       }
-      if(bunch.start++ < Display::ScreenHeight && bunch.start > 0) {
+      if(bunch.start++ < HannOS::Display::ScreenHeight && bunch.start > 0) {
         disp().draw(x, bunch.start - 1, 0x20); // Clear trail
       }
   };
 
   while(1) {
-    for(int i = 0; i < Display::ScreenWidth; ++ i)
+    for(int i = 0; i < HannOS::Display::ScreenWidth; ++ i)
       updateBunch(bunches[i], i);
     for(volatile int i = 0; i < 10000000; ++ i);
   }
@@ -123,12 +121,11 @@ void CMatrixPP(DisplayHandle disp) {
 #include <cstdio>
 
 extern "C" void kernel() {
-  Display display{};
-  
+  auto &display = HannOS::ActiveDisplay;
+  display.clear();
+
   display.draws("All processes dieded\n", 0xe0);
-  display.draws("Pointer length: ");
-  display.drawi(static_cast<std::int8_t>(sizeof(std::intptr_t)));
-  display.feedLine();
+  display.drawvar("Pointer length: ", static_cast<std::int8_t>(sizeof(std::intptr_t)), HannOS::Display::NewLine);
 
   auto cpuid = HannOS::CPU::getCPUID();
 
@@ -143,14 +140,14 @@ extern "C" void kernel() {
   if (cpuid.features.rdrnd) {
     CMatrixPP(display);
   } else {
-    display.draws("No RDRAND! PANIC!\n");
+    display.drawvar("No RDRAND! PANIC!", HannOS::Display::NewLine);
   }
 
-  display.drawvar("CPU info: \"", cpuid.identifier.chars, "\", max_func: ", cpuid.maxFunc, Display::NewLine);
-  display.drawvar("eax: ", cpuid.features.eax, Display::NewLine
-                , "ebx: ", cpuid.features.ebx, Display::NewLine
-                , "ecx: ", cpuid.features.ecx, Display::NewLine
-                , "edx: ", cpuid.features.edx, Display::NewLine
+  display.drawvar("CPU info: \"", cpuid.identifier.chars, "\", max_func: ", cpuid.maxFunc, HannOS::Display::NewLine);
+  display.drawvar("eax: ", cpuid.features.eax, HannOS::Display::NewLine
+                , "ebx: ", cpuid.features.ebx, HannOS::Display::NewLine
+                , "ecx: ", cpuid.features.ecx, HannOS::Display::NewLine
+                , "edx: ", cpuid.features.edx, HannOS::Display::NewLine
   );
 
   display.draws("\n\n:(\nOopsie Whoopsie! Uwu we made a fucky wucky!! "
