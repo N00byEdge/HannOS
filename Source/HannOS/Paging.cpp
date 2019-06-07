@@ -6,6 +6,9 @@
 
 namespace HannOS::Paging {
   namespace {
+    inline auto *pagingRoot =
+      reinterpret_cast<std::array<PageDirectoryEntry<PagingLevels>, PageDirSize> *>(0x1000);
+
     template<int level>
     constexpr auto index(std::intptr_t val) {
       return (val >> (level * 9 + 3)) & ((1 << 9) - 1);

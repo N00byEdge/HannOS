@@ -58,9 +58,6 @@ namespace HannOS::Paging {
   static_assert(sizeof(PageDirectoryEntry<3>) == sizeof(RepT));
   static_assert(sizeof(PageDirectoryEntry<2>) == sizeof(RepT));
 
-  inline auto *pagingRoot =
-    reinterpret_cast<std::array<PageDirectoryEntry<PagingLevels>, PageDirSize> *>(0x1000);
-
   struct PageTableEntry {
     union {
       RepT repr;
