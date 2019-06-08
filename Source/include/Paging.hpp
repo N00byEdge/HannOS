@@ -19,6 +19,17 @@ namespace HannOS::Paging {
 
   static_assert(PageSize == PageDirSize * sizeof(RepT));
 
+  inline auto alignPageUp = [](auto &val) {
+    auto mod = val % Paging::PageSize;
+    if(!mod)
+      return;
+    val += Paging::PageSize - mod;
+  };
+
+  inline auto alignPageDown = [](auto &val) {
+    val -= val % Paging::PageSize;
+  };
+
   namespace Impl {
     template<int level> struct PointedTo_    { using type = std::array<PageDirectoryEntry<level - 1>, PageDirSize>; };
     template<>          struct PointedTo_<2> { using type = std::array<PageTableEntry,                PageDirSize>; };

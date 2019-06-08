@@ -54,16 +54,6 @@ namespace HannOS::Memory {
 #include "Multiboot2.hpp"
 
 void HannOS::Multiboot2::MemoryMap::handle() {
-  auto alignPageUp = [](auto &val) {
-    auto mod = val % Paging::PageSize;
-    if(!mod)
-      return;
-    val += Paging::PageSize - mod;
-  };
-
-  auto alignPageDown = [](auto &val) {
-    val -= val % Paging::PageSize;
-  };
   Serial::varSerialLn("Mapped at startup: ", Memory::mappedAtStartup);
   Serial::varSerialLn("Statically allocated: ", Memory::heapStart);
 
@@ -92,8 +82,8 @@ void HannOS::Multiboot2::MemoryMap::handle() {
       begin = Memory::heapStart;
     }
 
-    alignPageUp(begin);
-    alignPageDown(end);
+    Paging::alignPageUp(begin);
+    Paging::alignPageDown(end);
 
     if(begin < end) {
       if(begin < Memory::mappedAtStartup && Memory::mappedAtStartup < end) {
