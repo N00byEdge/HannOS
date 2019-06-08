@@ -17,6 +17,7 @@ namespace HannOS::CPU {
   T in() {
     T retval;
     asm volatile("in %1, %0" : "=a"(retval):"Nd"(port));
+    return retval;
   }
 
   inline auto inb = [](auto port) { return in<std::uint8_t> (port); };
