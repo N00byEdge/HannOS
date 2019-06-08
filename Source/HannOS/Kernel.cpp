@@ -1,6 +1,5 @@
 #include "Descriptors.hpp"
-#include "Display.hpp"
-
+#include "Serial.hpp"
 #include "CPU.hpp"
 #include "Memory.hpp"
 #include "Random.hpp"
@@ -8,28 +7,24 @@
 
 #include <random>
 
-void primes(HannOS::DisplayHandle display) {
+void primes() {
   constexpr unsigned mprime = 64*1024;
   char nonprime[mprime/2]{0, 1, 0};
-  for(unsigned i = 3; i < mprime; i += 2) {
-    if(!nonprime[i / 2]) {
-      display().drawi(i);
-      display().feedLine();
-      for(unsigned j = i * i; j < mprime; j += i) {
-        nonprime[j / 2] = 1;
-      }
-    }
+  for(unsigned i = 3; i < mprime; i += 2) if(!nonprime[i / 2]) {
+    HannOS::Serial::varSerialLn(i);
+    for(unsigned j = i * i; j < mprime; j += i)
+      nonprime[j / 2] = 1;
   }
 }
 
-void printbenchmark(HannOS::DisplayHandle display) {
+/*void printbenchmark(HannOS::VGAHandle display) {
   for(int i = 0; i < 0x10000; ++ i) {
     display().setCursor(0, 0);
     display().drawi(i);
   }
-}
+}*/
 
-void memeditor(HannOS::DisplayHandle disp) {
+/*void memeditor(HannOS::VGAHandle disp) {
   //int *dummy = nullptr;
   //auto base = reinterpret_cast<int *>(&dummy);
   auto base = reinterpret_cast<std::uint32_t *>(0xb8000);
@@ -52,12 +47,12 @@ void memeditor(HannOS::DisplayHandle disp) {
       }
     }
   }
-}
+}*/
 
 using namespace std::string_view_literals;
 #include <algorithm>
 
-void CMatrixPP(HannOS::DisplayHandle disp) {
+/*void CMatrixPP(HannOS::VGAHandle disp) {
   //HannOS::CPU::outb(0x3D4, 0x0A);
   //HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xC0) | 0);
  
@@ -115,18 +110,16 @@ void CMatrixPP(HannOS::DisplayHandle disp) {
     for(volatile int i = 0; i < 10000000; ++ i);
   }
   HannOS::CPU::halt();
-}
+} */
 
 #include <algorithm>
 #include <sstream>
 #include <cstdio>
 
-extern "C" void kernel() {
-  auto &display = HannOS::ActiveDisplay;
-  display.clear();
 
-  display.draws("All processes dieded\n", 0xe0);
-  display.drawvar("Pointer length: ", static_cast<std::int8_t>(sizeof(std::intptr_t)), HannOS::Display::NewLine);
+extern "C" void kernel() {
+  HannOS::Serial::varSerialLn("All processes dieded");
+  HannOS::Serial::varSerialLn("Pointer length: ", static_cast<std::int8_t>(sizeof(std::intptr_t)));
 
   auto cpuid = HannOS::CPU::getCPUID();
 
@@ -141,19 +134,22 @@ extern "C" void kernel() {
   if (cpuid.features.rdrnd) {
     CMatrixPP(display);
   } else {
-    display.drawvar("No RDRAND! PANIC!", HannOS::Display::NewLine);
+    HannOS::Serial::varSerialLn("No RDRAND! PANIC!");
   }
 
-  display.drawvar("CPU info: \"", cpuid.identifier.chars, "\", max_func: ", cpuid.maxFunc, HannOS::Display::NewLine);
-  display.drawvar("eax: ", cpuid.features.eax, HannOS::Display::NewLine
-                , "ebx: ", cpuid.features.ebx, HannOS::Display::NewLine
-                , "ecx: ", cpuid.features.ecx, HannOS::Display::NewLine
-                , "edx: ", cpuid.features.edx, HannOS::Display::NewLine
+  HannOS::Serial::varSerialLn(
+    "CPU info: \"", cpuid.identifier.chars, "\", max_func: ", cpuid.maxFunc);
+
+  HannOS::Serial::varSerial(
+    "eax: ", cpuid.features.eax, '\n'
+  , "ebx: ", cpuid.features.ebx, '\n'
+  , "ecx: ", cpuid.features.ecx, '\n'
+  , "edx: ", cpuid.features.edx, '\n'
   );
 
-  display.draws("\n\n:(\nOopsie Whoopsie! Uwu we made a fucky wucky!! "
-                "A wittle fucko boingo! The code monkeys at our "
-                "headquarters are working VEWY HAWD to fix this!\n"
-    , 0x1f
+  HannOS::Serial::varSerial(
+    "\n\n:(\nOopsie Whoopsie! Uwu we made a fucky wucky!! "
+    "A wittle fucko boingo! The code monkeys at our "
+    "headquarters are working VEWY HAWD to fix this!\n"
   );
 }

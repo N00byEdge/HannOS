@@ -5,6 +5,7 @@
 
 #include "Memory.hpp"
 #include "CPU.hpp"
+#include "Serial.hpp"
 
 namespace HannOS::Memory {
   namespace {
@@ -53,8 +54,6 @@ namespace HannOS::Memory {
 #include "Multiboot2.hpp"
 
 void HannOS::Multiboot2::MemoryMap::handle() {
-  //Display::drawvar("Mapped at startup: ", Memory::mappedAtStartup, Display::NewLine);
-  //Display::drawvar("Statically allocated: ", Memory::heapStart, Display::NewLine);
   auto alignPageUp = [](auto &val) {
     auto mod = val % Paging::PageSize;
     if(!mod)
@@ -65,15 +64,17 @@ void HannOS::Multiboot2::MemoryMap::handle() {
   auto alignPageDown = [](auto &val) {
     val -= val % Paging::PageSize;
   };
+  Serial::varSerialLn("Mapped at startup: ", Memory::mappedAtStartup);
+  Serial::varSerialLn("Statically allocated: ", Memory::heapStart);
 
   auto consumeMappedPages = [](std::intptr_t begin, std::intptr_t end) {
-    //Display::drawvar("Consuming mapped pages ", begin, ':', end, Display::NewLine);
+    Serial::varSerialLn("Consuming mapped pages ", begin, ':', end);
     for(; begin < end; begin += Paging::PageSize)
       Memory::consumePage(reinterpret_cast<void *>(begin));
   };
 
   auto consumeUnmappedPages = [](std::intptr_t begin, std::intptr_t end) {
-    //Display::drawvar("Consuming unmapped pages ", begin, ':', end, Display::NewLine);
+    Serial::varSerialLn("Consuming unmapped pages ", begin, ':', end);
     for(; begin < end; begin += Paging::PageSize) {
       // Identity map this page
       Paging::PageTableEntry pte{};
@@ -86,7 +87,7 @@ void HannOS::Multiboot2::MemoryMap::handle() {
   };
 
   auto consume = [&](std::intptr_t begin, std::intptr_t end) {
-    //Display::drawvar("Range ", begin, ':', end, " available", Display::NewLine);
+    Serial::varSerialLn("Range ", begin, ':', end, " available");
     if(begin < Memory::heapStart) {
       begin = Memory::heapStart;
     }
@@ -120,6 +121,15 @@ void HannOS::Multiboot2::MemoryMap::handle() {
       HiberPreserve = 4,
       Defective     = 5,
     };
+    static char const *name(Type t) {
+      switch(t) {
+        case Type::Available:     return " available";
+        case Type::ACPIData:      return " APIC reserved";
+        case Type::HiberPreserve: return " reserved with hibernation requirement";
+        case Type::Defective:     return " reserved";
+      }
+      return " of unknown type";
+    }
     Type type;
     std::uint32_t reserved;
   };
@@ -137,30 +147,14 @@ void HannOS::Multiboot2::MemoryMap::handle() {
   );
   for(; curr != end; curr += entryPtrInts) {
     auto *ptr = reinterpret_cast<MemoryMapEntry *>(curr);
-    //Display::drawvar(ptr->length, " bytes ");
+    Serial::varSerialLn("Range ", ptr->base_addr, '+', ptr->length, ptr->name(ptr->type));
     switch(ptr->type) {
     case MemoryMapEntry::Type::Available:
-      //Display::drawvar("available");
       consume(ptr->base_addr, ptr->base_addr + ptr->length);
       break;
-    case MemoryMapEntry::Type::ACPIData:
-      //Display::drawvar("APIC reserved");
-      break;
-    case MemoryMapEntry::Type::HiberPreserve:
-      //Display::drawvar("reserved with hibernation requirement");
-      break;
-    case MemoryMapEntry::Type::Defective:
-      //Display::drawvar("defective");
-      break;
     default:
-      //Display::drawvar("reserved");
       break;
     }
-    //Display::drawvar(" at ", ptr->base_addr, Display::NewLine);
   }
-  Display::drawvar(
-    "Finished consuming memory. ",
-    Memory::numNodes, " pages available.",
-    Display::NewLine
-  );
+  Serial::varSerialLn("Finished consuming memory. ", Memory::numNodes, " pages available.");
 }

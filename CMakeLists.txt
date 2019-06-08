@@ -45,15 +45,15 @@ add_custom_target(boot ALL
 
 add_custom_target(go
   DEPENDS iso
-  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell
+  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -serial stdio
 )
 
 add_custom_target(dbg
   DEPENDS iso
-  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -S -s
+  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -S -s -serial stdio
 )
 
 add_custom_target(goreal
   DEPENDS iso
-  COMMAND kvm -m 512 -cdrom HannOS.iso -boot d -cpu host
+  COMMAND kvm -m 512 -cdrom HannOS.iso -boot d -cpu host -serial stdio
 )

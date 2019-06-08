@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "Display.hpp"
+#include "Serial.hpp"
 
 namespace HannOS::Multiboot2 {
     struct CommandLine {
@@ -89,10 +89,7 @@ namespace HannOS::Multiboot2 {
     std::uint8_t  framebuffer_type;
     std::uint8_t  reserved;
 
-    void handle() {
-      /*auto fb = framebuffer_addr;
-      HannOS::Display::drawvar("Frame buffer at ", fb, HannOS::Display::NewLine);*/
-    }
+    void handle();
   }__attribute__((packed));
   static_assert(sizeof(FramebufferInfo) == 31);
 
