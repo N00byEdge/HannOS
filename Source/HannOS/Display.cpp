@@ -1,14 +1,32 @@
 #include "Display.hpp"
 
 namespace {
-  Pixel *framebuffer;
-  std::ptrdiff_t width_;
-  std::ptrdiff_t height_;
+  std::intptr_t framebuffer;
+  std::int16_t width_;
+  std::int16_t height_;
   std::ptrdiff_t pitch;
   std::uint8_t depth;
 
+  // At least multiplication by constants should be faster
+  // than multiplication by arbitrary variables
+  // Also, the branch predictor should be able to figure this
+  // out really quickly and it never changes.
+  auto dep(std::intptr_t pos) {
+    if(depth == 4)
+      return pos * 4;
+    else // Assume 3 bytes per pixel
+      return pos * 3;
+  }
+
+  auto invdep(std::intptr_t num) {
+    if(depth == 4)
+      return num / 4;
+    else
+      return num / 3;
+  }
+
   Pixel &get(int x, int y) {
-    return *(framebuffer + x);
+    return *reinterpret_cast<Pixel *>(framebuffer + dep(x + invdep(pitch) * y));
   }
 }
 
@@ -17,16 +35,23 @@ namespace {
 
 namespace HannOS::Multiboot2 {
   void FramebufferInfo::handle() {
-    framebuffer = reinterpret_cast<Pixel *>(framebuffer_addr);
+    framebuffer = framebuffer_addr;
     width_ = framebuffer_width;
     height_ = framebuffer_height;
     pitch = framebuffer_pitch;
     depth = framebuffer_bpp;
-    Serial::varSerialLn("Got display: ", width_, 'x', height_, ", ", depth, " bpc at ", framebuffer, ", pitch=", pitch);
+    Serial::varSerialLn("Got display: ", width_, 'x', height_, ", ", depth, " bit depth at ", framebuffer, ", pitch=", pitch);
+    if(depth != 24 && depth != 32) {
+      Serial::varSerialLn("Invalid bit depth!", depth);
+      HannOS::CPU::halt();
+    }
+    depth /= 8; // I want it in bytes, not bits. Sue me.
+
+    Serial::varSerialLn("Using ", depth, " bytes per pixel");
 
     Serial::varSerialLn("Identity mapping display");
-    auto begin = reinterpret_cast<std::intptr_t>(framebuffer);
-    auto end = begin + pitch * height_ * 4;
+    auto begin = reinterpret_cast<std::intptr_t>(&get(0,0));
+    auto end = reinterpret_cast<std::intptr_t>(&get(width_, height_));
 
     Paging::alignPageDown(begin);
     Paging::alignPageUp(end);
@@ -48,13 +73,16 @@ namespace HannOS::Multiboot2 {
 
 namespace HannOS::Display {
   void putPixel(int x, int y, Pixel p) {
-    get(x, y) = p;
+    auto &px = get(x, y);
+    //Serial::varSerialLn("Before putting: ", px.color);
+    px = p;
+    //Serial::varSerialLn("After putting: ", px.color);
   }
 
-  std::ptrdiff_t height() {
+  std::int16_t height() {
     return height_;
   }
-  std::ptrdiff_t width() {
+  std::int16_t width() {
     return width_;
   }
 }

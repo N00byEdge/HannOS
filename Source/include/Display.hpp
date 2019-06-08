@@ -8,6 +8,6 @@ struct Pixel {
 
 namespace HannOS::Display {
   void putPixel(int x, int y, Pixel p);
-  std::ptrdiff_t height() __attribute__((const));
-  std::ptrdiff_t width() __attribute__((const));
+  std::int16_t height() __attribute__((pure));
+  std::int16_t width() __attribute__((pure));
 }

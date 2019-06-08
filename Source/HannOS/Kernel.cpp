@@ -121,9 +121,8 @@ using namespace std::string_view_literals;
 extern "C" void kernel() {
   for(int y = 0; y < HannOS::Display::height(); ++y) {
     for(int x = 0; x < HannOS::Display::width(); ++x) {
-      Pixel p = (x + y) % 13 == 0 ? Pixel{255, 0, 0} : Pixel{0, 255, 0};
+      Pixel p = (x % 20 == 0 || y % 20 == 0) ? Pixel{0xff, 0xff, 0xff} : Pixel{0x8c, 0x00, 0xf8};
       HannOS::Display::putPixel(x, y, p);
-      
     }
   }
   

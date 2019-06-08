@@ -19,7 +19,7 @@ mbbegin:
   .long 20
   .long 800
   .long 600
-  .long 8
+  .long 32
 
   .align 8  
 

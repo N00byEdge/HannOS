@@ -37,6 +37,7 @@ namespace HannOS::Serial {
 
     static bool canSend() { return CPU::in<T, hwport() + 5>() & 0x20; }
     static void write(char c) {
+      if(!c) return;
       while(!canSend());
       CPU::out<hwport()>(c);
     }
@@ -59,7 +60,7 @@ namespace HannOS::Serial {
 
     template<typename T>
     static void writei(T const &val) {
-      writes(String::to_chars<false>(val));
+      writes(String::to_chars<true>(val));
     }
 
     static inline Serial serial;

@@ -1,4 +1,5 @@
 #include<cstring>
+#include<cstdint>
 #include<atomic>
 #include<mutex>
 #include<new>
