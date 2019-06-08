@@ -35,7 +35,7 @@ void primes() {
     disp().setCursor(0, 0);
     disp().draws("Editing ");
     disp().drawi(reinterpret_cast<std::size_t>(base));
-    for (int y = 1; y < HannOS::Display::ScreenHeight; ++y) {
+    for (int y = 1; y < HannOS::VGA::ScreenHeight; ++y) {
       disp().setCursor(0, y);
       disp().drawi(reinterpret_cast<std::size_t>(addr));
       disp().draws(":");
@@ -60,18 +60,18 @@ using namespace std::string_view_literals;
   // HannOS::CPU::outb(0x3D5, (HannOS::CPU::inb(0x3D5) & 0xE0) | 0);
   // HannOS::CPU::outb(0x3d4, 0x0a);
   // HannOS::CPU::outb(0x3d5, 0x20);
-  //outb(0x3D4, 0x0A);
-  //outb(0x3D5, 0x20);
+  // outb(0x3D4, 0x0A);
+  // outb(0x3D5, 0x20);
   disp().clear();
   struct Bunch {
     int start = std::uniform_int_distribution<int>
-      {0, HannOS::Display::ScreenHeight}
+      {0, HannOS::VGA::ScreenHeight}
       (HannOS::RandomDevice);
-    int end = HannOS::Display::ScreenHeight;
+    int end = HannOS::VGA::ScreenHeight;
   };
-  std::array<Bunch, HannOS::Display::ScreenWidth> bunches;
+  std::array<Bunch, HannOS::VGA::ScreenWidth> bunches;
   auto updateBunch = [&](Bunch &bunch, int x) {
-    if(bunch.start == HannOS::Display::ScreenHeight) {
+    if(bunch.start == HannOS::VGA::ScreenHeight) {
         // chance to start over
         if(std::uniform_int_distribution<int>{0, 25}(HannOS::RandomDevice)) {
           return;
@@ -86,10 +86,10 @@ using namespace std::string_view_literals;
       if (!std::uniform_int_distribution<int>{0, 16}(HannOS::RandomDevice))
         return;
       // Update the bunch
-      if(bunch.end > 0 && bunch.end <= HannOS::Display::ScreenHeight) {
+      if(bunch.end > 0 && bunch.end <= HannOS::VGA::ScreenHeight) {
         disp().decorate(x, bunch.end - 1, 0x0a); // Color character drawn last update green
       }
-      if(++bunch.end <= HannOS::Display::ScreenHeight) {
+      if(++bunch.end <= HannOS::VGA::ScreenHeight) {
         // Make new character
         char sample;
         constexpr auto chars = ""sv
@@ -99,13 +99,13 @@ using namespace std::string_view_literals;
         disp().decorate(x, bunch.end - 1, 0x0f); // Color character white
         disp().draw(x, bunch.end - 1, sample);   // Set to the sampled character
       }
-      if(bunch.start++ < HannOS::Display::ScreenHeight && bunch.start > 0) {
+      if(bunch.start++ < HannOS::VGA::ScreenHeight && bunch.start > 0) {
         disp().draw(x, bunch.start - 1, 0x20); // Clear trail
       }
   };
 
   while(1) {
-    for(int i = 0; i < HannOS::Display::ScreenWidth; ++ i)
+    for(int i = 0; i < HannOS::VGA::ScreenWidth; ++ i)
       updateBunch(bunches[i], i);
     for(volatile int i = 0; i < 10000000; ++ i);
   }
@@ -116,8 +116,17 @@ using namespace std::string_view_literals;
 #include <sstream>
 #include <cstdio>
 
+#include "Display.hpp"
 
 extern "C" void kernel() {
+  for(int y = 0; y < HannOS::Display::height(); ++y) {
+    for(int x = 0; x < HannOS::Display::width(); ++x) {
+      Pixel p = (x + y) % 13 == 0 ? Pixel{255, 0, 0} : Pixel{0, 255, 0};
+      HannOS::Display::putPixel(x, y, p);
+      
+    }
+  }
+  
   HannOS::Serial::varSerialLn("All processes dieded");
   HannOS::Serial::varSerialLn("Pointer length: ", static_cast<std::int8_t>(sizeof(std::intptr_t)));
 
@@ -127,12 +136,8 @@ extern "C" void kernel() {
   //primes(display);
   //memeditor(display);
 
-  //HannOS::CPU::outb(0x70, 0x8A);
-  //HannOS::CPU::outb(0x71, 0x20);
-  //display.drawi(HannOS::CPU::inb(0x07));
-
   if (cpuid.features.rdrnd) {
-    CMatrixPP(display);
+    //CMatrixPP(display);
   } else {
     HannOS::Serial::varSerialLn("No RDRAND! PANIC!");
   }
