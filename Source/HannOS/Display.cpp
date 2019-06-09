@@ -18,15 +18,8 @@ namespace {
       return pos * 3;
   }
 
-  auto invdep(std::intptr_t num) {
-    if(depth == 4)
-      return num / 4;
-    else
-      return num / 3;
-  }
-
   Pixel &get(int x, int y) {
-    return *reinterpret_cast<Pixel *>(framebuffer + dep(x + invdep(pitch) * y));
+    return *reinterpret_cast<Pixel *>(framebuffer + dep(x + pitch * y));
   }
 }
 
@@ -46,6 +39,7 @@ namespace HannOS::Multiboot2 {
       HannOS::CPU::halt();
     }
     depth /= 8; // I want it in bytes, not bits. Sue me.
+    pitch /= depth; // I want this in pixels.
 
     Serial::varSerialLn("Using ", depth, " bytes per pixel");
 
