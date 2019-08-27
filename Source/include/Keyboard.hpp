@@ -4,7 +4,7 @@
 #include <functional>
 
 struct Keyboard {
-  using KeyHandle = char;
+  using KeyHandle = unsigned char;
 
 	struct KeyboardEvent {
     KeyHandle key;
@@ -20,26 +20,17 @@ struct Keyboard {
     bool rShiftPressed   : 1;
   };
 
-  using KeyboardEventHandler = std::function<void(KeyboardEvent const &)>;
+  /*
+  struct Handler {
+    Handler &prev;
 
-  struct KeyboardHandle {
-    KeyboardHandle(Keyboard &keyboard): keyboard{ keyboard } {
-
-    }
-
-    ~KeyboardHandle() {
-
-    }
-
-  private:
-    KeyboardEventHandler lastSuperHandler;
-    KeyboardEventHandler lastDefaultHandler;
-    Keyboard &keyboard;
   };
 
-private:
-  KeyboardEventHandler superHandler;
-  KeyboardEventHandler defaultHandler;
+  using KeyboardEventHandler
+    = std::function<void(KeyboardEvent &)>;
+  using SuperHandler
+    = std::function<bool(KeyboardEvent &)>;
 
-  std::bitset<128> pressed;
+  void registerSuperHandler(SuperHandler);
+  */
 };

@@ -76,6 +76,11 @@ namespace HannOS::Serial {
   template<std::size_t n>
   struct isStdArray<std::array<char, n>>: std::true_type {};
 
+  template<typename T>
+  struct isStdString: std::false_type { };
+  template<>
+  struct isStdString<std::string_view>: std::true_type {};
+
   template<int port = 1, typename ...Ts>
   static void varSerial(Ts &&...vs) {
     auto com = Serial<port>::serial;
@@ -89,9 +94,11 @@ namespace HannOS::Serial {
       if constexpr((std::is_pointer_v<std::decay_t<decltype(val)>>
                 && !std::is_same_v<std::decay_t<decltype(val)>, void *>)
                 || std::is_array_v<std::decay_t<decltype(val)>>
-                || isStdArray<std::decay_t<decltype(val)>>::value)
+                || isStdArray<std::decay_t<decltype(val)>>::value
+                || isStdString<std::decay_t<decltype(val)>>::value)
       {
-        if constexpr(std::is_same_v<std::decay_t<decltype(val[0])>, char>)
+        if constexpr(std::is_same_v<std::decay_t<decltype(val[0])>, char>
+                  || isStdString<std::decay_t<decltype(val)>>::value)
           return com.writes(val);
         else if constexpr(std::is_array_v<std::decay_t<decltype(val)>>
                        || isStdArray<std::decay_t<decltype(val)>>::value)
@@ -106,5 +113,10 @@ namespace HannOS::Serial {
   template<int port = 1, typename ...Ts>
   static void varSerialLn(Ts &&...vs) {
     varSerial(std::forward<Ts>(vs)..., '\n');
+  }
+
+  template<int port = 1>
+  static char read() {
+    return Serial<port>::read();
   }
 }

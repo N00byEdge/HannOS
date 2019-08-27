@@ -15,7 +15,6 @@ namespace HannOS::Paging {
 
   constexpr auto PageSize     = 0x1000;
   constexpr auto PageDirSize  = 512;
-  constexpr auto PagingLevels = 4;
 
   static_assert(PageSize == PageDirSize * sizeof(RepT));
 
@@ -106,4 +105,7 @@ namespace HannOS::Paging {
 
   // Returns old page table entry at the same address
   PageTableEntry setMap(void *virtAddr, PageTableEntry entry);
+
+  // Gives you `num` pages of present virtual address space
+  void *consumeVirtPages(std::ptrdiff_t num);
 }

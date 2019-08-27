@@ -12,7 +12,7 @@ namespace HannOS {
     [[nodiscard]]
     static auto get() {
       T retval;
-      asm("rdrand %0":"=r"(retval));
+      asm volatile("rdrand %0":"=r"(retval));
       return retval;
     }
 

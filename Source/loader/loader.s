@@ -10,9 +10,9 @@ gdtpointer:
 .quad gdt
 
 .section .bss
-.space 512*1024
-.global stack
-stack:
+.space 4096
+.global earlyStack
+earlyStack:
 .space 8
 .global multibootInfoLoc
 multibootInfoLoc:
@@ -74,17 +74,47 @@ pageEntry:
   # Jump into 64 bit mode
   jmp 0x08:go64
 .code64
+noSSE:
+  hlt
+
 go64:
+  mov eax, 0x1
+  cpuid
+  test edx, 1<<25
+  jz noSSE
+
+  # Enable SSE
+  mov rax, cr0
+  and ax, 0xFFFB
+  or ax, 0x2
+  mov cr0, rax
+  mov rax, cr4
+  or ax, 3 << 9
+  mov cr4, rax
+ 
   # Set stack for C runtime
-  mov rsp, offset stack
+  mov rsp, offset earlyStack
+  mov rbp, rsp
+
+  # Load IDT
+.extern loadIDT
+  call  loadIDT
 
   # Call global constructors
 .extern doConstructors
   call  doConstructors
 
-  # Load multiboot info
+  # Load info from grub, including
+  # memory maps
 .extern loadMultibootInfo
   call  loadMultibootInfo
+
+  # Get a larger stack now that
+  # we've initialized more memory
+.extern aquireLorgeStack
+  call  aquireLorgeStack
+  mov rsp, rax
+  mov rbp, rsp
 
   # Go 64 bit kernel
 .extern kernel

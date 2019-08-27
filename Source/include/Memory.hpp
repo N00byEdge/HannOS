@@ -45,4 +45,6 @@ namespace HannOS::Memory {
 
   [[nodiscard]]
   PageAllocation fetchClearPage();
+
+  void *consumeVirtSpace(std::ptrdiff_t numPages);
 }

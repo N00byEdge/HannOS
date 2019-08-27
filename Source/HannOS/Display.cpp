@@ -1,7 +1,11 @@
 #include "Display.hpp"
 
+#include <cstring>
+
 namespace {
-  std::intptr_t framebuffer;
+  std::intptr_t frontBuffer;
+  std::intptr_t backBuffer;
+  std::intptr_t bufSize;
   std::int16_t width_;
   std::int16_t height_;
   std::ptrdiff_t pitch;
@@ -18,8 +22,8 @@ namespace {
       return pos * 3;
   }
 
-  Pixel &get(int x, int y) {
-    return *reinterpret_cast<Pixel *>(framebuffer + dep(x + pitch * y));
+  HannOS::Display::Pixel &get(int x, int y) {
+    return *reinterpret_cast<HannOS::Display::Pixel *>(backBuffer + dep(x + pitch * y));
   }
 }
 
@@ -28,12 +32,12 @@ namespace {
 
 namespace HannOS::Multiboot2 {
   void FramebufferInfo::handle() {
-    framebuffer = framebuffer_addr;
+    frontBuffer = framebuffer_addr;
     width_ = framebuffer_width;
     height_ = framebuffer_height;
     pitch = framebuffer_pitch;
     depth = framebuffer_bpp;
-    Serial::varSerialLn("Got display: ", width_, 'x', height_, ", ", depth, " bit depth at ", framebuffer, ", pitch=", pitch);
+    Serial::varSerialLn("Got display: ", width_, 'x', height_, ", ", depth, " bit depth at ", frontBuffer, ", pitch=", pitch);
     if(depth != 24 && depth != 32) {
       Serial::varSerialLn("Invalid bit depth!", depth);
       HannOS::CPU::halt();
@@ -44,8 +48,10 @@ namespace HannOS::Multiboot2 {
     Serial::varSerialLn("Using ", depth, " bytes per pixel");
 
     Serial::varSerialLn("Identity mapping display");
-    auto begin = reinterpret_cast<std::intptr_t>(&get(0,0));
-    auto end = reinterpret_cast<std::intptr_t>(&get(width_, height_));
+
+    auto begin = frontBuffer;
+    bufSize    = dep(width_ + pitch * height_);
+    auto end   = begin + bufSize;
 
     Paging::alignPageDown(begin);
     Paging::alignPageUp(end);
@@ -62,15 +68,20 @@ namespace HannOS::Multiboot2 {
         HannOS::CPU::halt();
       }
     }
+
+    Serial::varSerialLn("Setting up back buffer");
+    auto numPages = (end - begin) / Paging::PageSize;
+    auto const backBuf = Paging::consumeVirtPages(numPages);
+    backBuffer =
+      reinterpret_cast<std::intptr_t>(backBuf);
+    Display::clear();
+    Serial::varSerialLn("Back buffer at virtual address ", backBuf);
   }
 }
 
 namespace HannOS::Display {
   void putPixel(int x, int y, Pixel p) {
-    auto &px = get(x, y);
-    //Serial::varSerialLn("Before putting: ", px.color);
-    px = p;
-    //Serial::varSerialLn("After putting: ", px.color);
+    get(x, y) = p;
   }
 
   std::int16_t height() {
@@ -78,5 +89,18 @@ namespace HannOS::Display {
   }
   std::int16_t width() {
     return width_;
+  }
+
+  void swapBuffers() {
+    std::memcpy(
+      reinterpret_cast<void *>(frontBuffer),
+      reinterpret_cast<void *>(backBuffer),
+      bufSize
+    );
+  }
+
+  void clear(Pixel p) {
+    for(auto y = 0; y < height(); ++y) for(auto x = 0; x < width(); ++ x)
+      get(x, y) = p;
   }
 }

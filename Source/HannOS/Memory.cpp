@@ -21,6 +21,7 @@ namespace HannOS::Memory {
     std::mutex mut;
 
     constexpr std::intptr_t mappedAtStartup = Paging::PageSize * Paging::PageDirSize;
+    std::intptr_t heapEnd = mappedAtStartup;
     extern "C" std::intptr_t kernelEnd;
     std::intptr_t heapStart = reinterpret_cast<std::intptr_t>(&kernelEnd);
 
@@ -49,6 +50,12 @@ namespace HannOS::Memory {
     auto ret = fetchPage();
     std::memset(ret.mem(), '\x00', 0x1000);
     return ret;
+  }
+
+  void *consumeVirtSpace(std::ptrdiff_t numPages) {
+    auto ret = heapEnd;
+    heapEnd += numPages * Paging::PageSize;
+    return reinterpret_cast<void *>(ret);
   }
 }
 
@@ -138,10 +145,16 @@ void HannOS::Multiboot2::MemoryMap::handle() {
   );
   for(; curr != end; curr += entryPtrInts) {
     auto *ptr = reinterpret_cast<MemoryMapEntry *>(curr);
-    Serial::varSerialLn("Range ", ptr->base_addr, '+', ptr->length, ptr->name(ptr->type));
+    auto begin = ptr->base_addr;
+    auto end = begin + ptr->length;
+    Serial::varSerialLn("Range ", begin, '+', ptr->length, ptr->name(ptr->type));
     switch(ptr->type) {
     case MemoryMapEntry::Type::Available:
-      consume(ptr->base_addr, ptr->base_addr + ptr->length);
+      consume(begin, end);
+      Paging::alignPageUp(end);
+      if(Memory::heapEnd < end) {
+        Memory::heapEnd = end;
+      }
       break;
     default:
       break;

@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 project(HannOS C CXX ASM)
 
-set(C_AND_CXX_FLAGS "-ffreestanding -g -DNDEBUG")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_AND_CXX_FLAGS} -Wall -fno-exceptions -fno-rtti")
+set(C_AND_CXX_FLAGS "-ffreestanding -g -Wall -fno-stack-protector -mno-red-zone -march=core2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_AND_CXX_FLAGS} -fno-exceptions -fno-rtti")
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -WX -std:c++17 -Os")
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-sign-compare -std=c++17 -Os")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare -std=c++17 -Os")
 endif(MSVC)
 set(CMAKE_ASM_FLAGS "")
 
@@ -45,15 +45,15 @@ add_custom_target(boot ALL
 
 add_custom_target(go
   DEPENDS iso
-  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -serial stdio
+  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -serial stdio -no-reboot
 )
 
 add_custom_target(dbg
   DEPENDS iso
-  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -S -s -serial stdio
+  COMMAND qemu-system-x86_64 -m 512 -cdrom HannOS.iso -boot d -cpu Haswell -serial stdio -S -s -no-reboot
 )
 
 add_custom_target(goreal
   DEPENDS iso
-  COMMAND kvm -m 512 -cdrom HannOS.iso -boot d -cpu host -serial stdio
+  COMMAND qemu-system-x86_64 -enable-kvm -m 512 -cdrom HannOS.iso -boot d -cpu host -serial stdio -no-reboot
 )
