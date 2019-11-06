@@ -347,7 +347,7 @@ namespace HannOS::Demos {
       return;
     }
 
-    auto color = HannOS::Display::Pixel;
+    auto color = HannOS::Display::Pixel{};
     color.red = r;
     color.green = g;
     color.blue = b;
