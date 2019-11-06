@@ -49,33 +49,47 @@ namespace HannOS::String {
   }
 
   template<int numParts>
-  using splitResult = std::array<std::string_view, numParts>;
+  struct splitResult {
+    std::array<std::string_view, numParts> parts;
+    int num;
+  };
 
   template<int targetParts>
-  auto split(std::string_view source, char splitOn, int &partsOut) {
+  auto split(std::string_view source, char splitOn) {
     static_assert(targetParts >= 1, "Has to split into at least one part");
-    partsOut = 1;
-    splitResult<targetParts> ret{source};
+    splitResult<targetParts> ret;
+    ret.num = 1;
+    ret.parts[0] = source;
 
-    for(auto currPart = ret.begin(); partsOut < targetParts; ++currPart, ++partsOut) {
+    for(auto currPart = ret.parts.begin(); ret.num < targetParts; ++currPart, ++ret.num) {
       auto foundAt = currPart->find(splitOn);
       if(foundAt == currPart->npos)
         break;
       *std::next(currPart) = currPart->substr(foundAt + 1);
       *currPart = currPart->substr(0, foundAt);
     }
+
     return ret;
   }
 
-  template<int targetParts>
-  auto split(std::string_view source, char splitOn) {
-    int parts;
-    return split<targetParts>(source, splitOn, parts);
+  struct ParseIgnore{};
+
+  namespace Impl {
+    template<int ind, int spsz, typename T, typename ...Rest>
+    void doParse(splitResult<spsz> const &result, T &&v, Rest &&...rest) {
+      if(ind >= result.num)
+        return;
+      if constexpr(!std::is_same_v<std::decay_t<T>, ParseIgnore>)
+        std::from_chars(result.parts[ind].begin(), result.parts[ind].end(), std::forward<T>(v));
+      if constexpr(sizeof...(rest))
+        return doParse<ind + 1>(result, std::forward<Rest>(rest)...);
+    }
   }
 
-  template<typename ...Args, typename Value>
-  void parse(std::string_view text, Value &val, Args ...args) {
-    std::to_chars(text.begin(), text.end(), val);
-    parse(args...);
+  template<typename ...Args>
+  auto parse(std::string_view const &text, char splitOn, Args &&...args) {
+    auto spl = split<sizeof...(args)>(text, splitOn);
+    Impl::doParse<0>(spl, std::forward<Args>(args)...);
+    return spl;
   }
 }

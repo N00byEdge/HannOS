@@ -107,12 +107,14 @@ void memswp(void *a, void *b, std::size_t n) {
 namespace std {
   void __throw_system_error(int val) {
     HannOS::Serial::varSerialLn("Fatal system error: ", val, ". Halting.");
-    HannOS::CPU::halt();
+    while(1)
+      HannOS::CPU::halt();
   }
 
   void __throw_out_of_range_fmt(char const *fmt, ...) {
     HannOS::Serial::varSerialLn("Out of range error: ", fmt, ". That's a format string but I'm not touching that shit.");
-    HannOS::CPU::halt();
+    while(1)
+      HannOS::CPU::halt();
   }
 }
 
@@ -150,8 +152,55 @@ int isdigit(int val) {
 
 extern "C"
 void *aquireLorgeStack() {
-  constexpr auto numPages = 50;
+  constexpr auto numPages = 1024;
   auto stackBase = reinterpret_cast<char *>(HannOS::Paging::consumeVirtPages(numPages));
-  auto stackEnd = HannOS::Paging::PageSize * numPages + stackBase - 8;
+  auto stackEnd = HannOS::Paging::PageSize * numPages + stackBase;
   return stackEnd;
+}
+
+namespace {
+  using VoidFunc = void(*)(void *);
+  struct AtexitObj {
+    VoidFunc func;
+    void *obj;
+    void *dso;
+  };
+  std::array<AtexitObj, 0x100> atexitFuncs;
+  std::size_t atexitFuncCount = 0;
+}
+
+extern "C" {
+  void *__dso_handle = nullptr;
+
+  int __cxa_atexit(VoidFunc f, void *objptr, void *dso) {
+    if(atexitFuncCount >= atexitFuncs.size()){
+        return -1;
+    }
+    atexitFuncs[atexitFuncCount].func = f;
+    atexitFuncs[atexitFuncCount].obj = objptr;
+    atexitFuncs[atexitFuncCount++].dso = dso;
+    return 0;
+  }
+
+  void __cxa_finalize(void *f) {
+    if(f) {
+      // Kill one thing
+      auto it = std::find_if(atexitFuncs.begin(), atexitFuncs.end(), [](AtexitObj const &obj) { return obj.func; });
+      if(it != atexitFuncs.end() && it->func)
+        std::exchange(it->func, nullptr)(it->obj);
+    }
+    else {
+      // kill all things
+      for(auto &f: atexitFuncs)
+        std::exchange(f.func, nullptr)(f.obj);
+      atexitFuncCount = 0;
+    }
+  }
+}
+
+void std::__throw_bad_function_call() {
+  HannOS::Serial::varSerialLn("Bad function call.");
+  while(1) {
+    HannOS::CPU::halt();
+  }
 }

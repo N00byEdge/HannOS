@@ -48,6 +48,12 @@ namespace HannOS::Paging {
     std::mutex pageWriteMtx;
 
     PageTableEntry setMap(std::array<PageTableEntry, PageDirSize> &pta, void *virt, PageTableEntry entry) {
+      struct Clobbernator{
+        Clobbernator(void *ptr): ptr{ptr} { }
+        ~Clobbernator() { asm volatile("invlpg (%0)" :: "b"(ptr):"memory"); }
+      private:
+        void *ptr;
+      } clobber{virt};
       return std::exchange(pta[index<1>(virt)], entry);
     }
 

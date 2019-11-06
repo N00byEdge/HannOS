@@ -4,7 +4,7 @@
 
 namespace HannOS::Display {
   struct Pixel {
-    std::uint8_t red, green, blue;
+    std::uint8_t blue, green, red;
   };
 
   void putPixel(int x, int y, Pixel p);

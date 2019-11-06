@@ -18,15 +18,13 @@ namespace HannOS::Paging {
 
   static_assert(PageSize == PageDirSize * sizeof(RepT));
 
-  inline auto alignPageUp = [](auto &val) {
-    auto mod = val % Paging::PageSize;
-    if(!mod)
-      return;
-    val += Paging::PageSize - mod;
-  };
-
   inline auto alignPageDown = [](auto &val) {
     val -= val % Paging::PageSize;
+  };
+
+  inline auto alignPageUp = [](auto &val) {
+    val += Paging::PageSize - 1;
+    alignPageDown(val);
   };
 
   namespace Impl {

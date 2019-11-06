@@ -38,12 +38,12 @@ namespace HannOS::Serial {
     static bool canSend() { return CPU::in<T, hwport() + 5>() & 0x20; }
     static void write(char c) {
       if(!c) return;
-      while(!canSend());
+      while(!canSend()) __asm__("pause");
       CPU::out<hwport()>(c);
     }
     static bool hasData() { return CPU::in<T, hwport() + 5>() & 0x01; }
     static char read() {
-      while(!hasData());
+      while(!hasData()) __asm__("pause");
       return CPU::in<T, hwport()>();
     }
 
@@ -62,14 +62,12 @@ namespace HannOS::Serial {
     static void writei(T const &val) {
       writes(String::to_chars<true>(val));
     }
-
-    static inline Serial serial;
   };
 
-  static inline Serial<1> &serial1 = Serial<1>::serial;
-  static inline Serial<2> &serial2 = Serial<2>::serial;
-  static inline Serial<3> &serial3 = Serial<3>::serial;
-  static inline Serial<4> &serial4 = Serial<4>::serial;
+  static inline Serial<1> serial1;
+  static inline Serial<2> serial2;
+  static inline Serial<3> serial3;
+  static inline Serial<4> serial4;
 
   template<typename T>
   struct isStdArray: std::false_type { };
@@ -83,14 +81,14 @@ namespace HannOS::Serial {
 
   template<int port = 1, typename ...Ts>
   static void varSerial(Ts &&...vs) {
-    auto com = Serial<port>::serial;
+    using com = Serial<port>;
     auto const f = [&](auto val) {
       if constexpr(std::is_same_v<std::decay_t<decltype(val)>, char>)
-        return com.write(val);
+        return com::write(val);
       if constexpr(std::is_integral_v<std::decay_t<decltype(val)>>)
-        return com.writei(val);
+        return com::writei(val);
       if constexpr(std::is_same_v<std::decay_t<decltype(val)>, void *>)
-        return com.writei(reinterpret_cast<std::intptr_t>(val));
+        return com::writei(reinterpret_cast<std::intptr_t>(val));
       if constexpr((std::is_pointer_v<std::decay_t<decltype(val)>>
                 && !std::is_same_v<std::decay_t<decltype(val)>, void *>)
                 || std::is_array_v<std::decay_t<decltype(val)>>
@@ -99,12 +97,12 @@ namespace HannOS::Serial {
       {
         if constexpr(std::is_same_v<std::decay_t<decltype(val[0])>, char>
                   || isStdString<std::decay_t<decltype(val)>>::value)
-          return com.writes(val);
+          return com::writes(val);
         else if constexpr(std::is_array_v<std::decay_t<decltype(val)>>
                        || isStdArray<std::decay_t<decltype(val)>>::value)
-          com.writeiarr(val, " ");
+          com::writeiarr(val, " ");
         else
-          return com.writei(reinterpret_cast<std::intptr_t>(val));
+          return com::writei(reinterpret_cast<std::intptr_t>(val));
       }
     };
     (f(std::forward<Ts>(vs)), ...);

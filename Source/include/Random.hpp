@@ -8,7 +8,7 @@ namespace HannOS {
     static constexpr result_type min() { return std::numeric_limits<std::uint64_t>::min(); }
     static constexpr result_type max() { return std::numeric_limits<std::uint64_t>::max(); }
 
-    template<typename T = std::uint64_t>
+    template<typename T = result_type>
     [[nodiscard]]
     static auto get() {
       T retval;

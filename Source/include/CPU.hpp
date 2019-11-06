@@ -7,6 +7,10 @@
 #include "Interrupt.hpp"
 
 namespace HannOS::CPU {
+  inline void halt() {
+    asm volatile("hlt");
+  }
+  
   template<typename T>
   T in(std::uint16_t port) {
     T retval;
@@ -38,6 +42,10 @@ namespace HannOS::CPU {
   inline auto outb = [](auto port, auto value) { out<std::uint8_t> (port, value); };
   inline auto outw = [](auto port, auto value) { out<std::uint16_t>(port, value); };
   inline auto outl = [](auto port, auto value) { out<std::uint32_t>(port, value); };
+
+  inline void waitIO() {
+    outb(0x80, 0);
+  }
 
   union CPUIdentifier {
     struct {

@@ -2,17 +2,51 @@
 
 .code64
 .section .data
+.global tssBegin
+        tssBegin:
+.long 0  # 0x00 reserved
+.quad interruptStack # 0x04 RSP 0
+.quad 0  # 0x0C RSP 1
+.quad 0  # 0x14 RSP 2
+.quad 0  # 0x1C reserved
+.quad 0  # 0x24 IST1
+.quad 0  # 0x2C IST2
+.quad 0  # 0x34 IST3
+.quad 0  # 0x3C IST4
+.quad 0  # 0x44 IST5
+.quad 0  # 0x4C IST6
+.quad 0  # 0x54 IST7
+.quad 0  # 0x5c reserved
+.word 0  # 0x64 reserved
+.word tssSize # 0x66 iopb offset
+.global tssEnd
+        tssEnd:
+
+.set tssSize, tssEnd - tssBegin
+
+.extern gdtTssData [data, size=8]
+
 gdt:     .quad 0x000100000000ffff
 gdtcode: .quad 0x00af9a0000000000
 gdtdata: .quad 0x0000920000000000
+gdttss:  .quad gdtTssData # Calculated in linker script
+         .long tssAddrHighest
+         .long 0 # reserved
 gdtpointer:
 .word .-gdt-1
 .quad gdt
 
+.set codeDescriptor, gdtcode - gdt
+.set dataDescriptor, gdtdata - gdt
+.global tssDescriptor
+   .set tssDescriptor, gdttss - gdt
+
 .section .bss
 .space 4096
 .global earlyStack
-earlyStack:
+        earlyStack:
+.space 4096
+interruptStack:
 .space 8
 .global multibootInfoLoc
 multibootInfoLoc:
@@ -71,13 +105,24 @@ pageEntry:
   # Load 64 bit global descriptor table for long jump
   lgdt [gdtpointer]
 
+  mov ax, dataDescriptor
+  mov ss, ax
+  mov ds, ax
+  mov es, ax
+  mov fs, ax
+  mov gs, ax
+
   # Jump into 64 bit mode
-  jmp 0x08:go64
+  jmp codeDescriptor:go64
 .code64
 noSSE:
   hlt
 
 go64:
+  # Load TSS
+  # mov ax, tssDescriptor
+  # ltr ax
+
   mov eax, 0x1
   cpuid
   test edx, 1<<25
@@ -96,13 +141,13 @@ go64:
   mov rsp, offset earlyStack
   mov rbp, rsp
 
-  # Load IDT
-.extern loadIDT
-  call  loadIDT
-
   # Call global constructors
 .extern doConstructors
   call  doConstructors
+
+  # Enable interrupts
+.extern enableInterrupts
+  call  enableInterrupts
 
   # Load info from grub, including
   # memory maps

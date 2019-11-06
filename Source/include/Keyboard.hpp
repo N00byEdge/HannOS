@@ -3,10 +3,20 @@
 #include <bitset>
 #include <functional>
 
-struct Keyboard {
+namespace HannOS::Keyboard {
   using KeyHandle = unsigned char;
 
-	struct KeyboardEvent {
+  constexpr std::uint8_t dataPort = 0x60;
+  constexpr std::uint8_t statusPort = 0x64;
+  constexpr std::uint8_t commandPort = statusPort;
+
+  // Distinct type relative to Interrupts::Decision to avoid conversions
+  enum struct Decision {
+    Passthrough,
+    Consume,
+  };
+
+  struct KeyboardEvent {
     KeyHandle key;
     bool keyUp           : 1;
     bool fnPressed       : 1;
@@ -20,17 +30,25 @@ struct Keyboard {
     bool rShiftPressed   : 1;
   };
 
-  /*
-  struct Handler {
-    Handler &prev;
+  using Handler = std::function<Decision(KeyboardEvent &)>;
 
+  Handler installHandler(Handler &&);
+
+  struct ScopedHandler {
+     ScopedHandler(Handler &&handler):
+        current{std::move(handler)}
+      , prev{installHandler([this](KeyboardEvent &ev) {
+          auto res = this->prev(ev);
+          if(res == Decision::Passthrough) {
+            return current(ev);
+          }
+        })}
+      { }
+    ~ScopedHandler() {
+      installHandler(std::move(prev));
+    }
+  private:
+    Handler current;
+    Handler prev;
   };
-
-  using KeyboardEventHandler
-    = std::function<void(KeyboardEvent &)>;
-  using SuperHandler
-    = std::function<bool(KeyboardEvent &)>;
-
-  void registerSuperHandler(SuperHandler);
-  */
-};
+}
